@@ -481,7 +481,7 @@ impl<W: Waker> Handle<W> {
         let (sender, recvr) = chan::bounded(1);
         self._command(Command::GetPeers(services.into(), sender))?;
 
-        Ok(recvr.recv()?)
+        Ok(recvr.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     /// Send a command to the command channel, and wake up the event loop.
@@ -498,21 +498,21 @@ impl<W: Waker> handle::Handle for Handle<W> {
         let (transmit, receive) = chan::bounded::<(Height, BlockHeader, Uint256)>(1);
         self._command(Command::GetTip(transmit))?;
 
-        Ok(receive.recv()?)
+        Ok(receive.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn get_block(&self, hash: &BlockHash) -> Result<Option<(Height, BlockHeader)>, handle::Error> {
         let (transmit, receive) = chan::bounded(1);
         self._command(Command::GetBlockByHash(*hash, transmit))?;
 
-        Ok(receive.recv()?)
+        Ok(receive.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn get_block_by_height(&self, height: Height) -> Result<Option<BlockHeader>, handle::Error> {
         let (sender, recvr) = chan::bounded(1);
         self._command(Command::GetBlockByHeight(height, sender))?;
 
-        Ok(recvr.recv()?)
+        Ok(recvr.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn query_tree(
@@ -537,7 +537,7 @@ impl<W: Waker> handle::Handle for Handle<W> {
             transmit.send(t.find_branch(&to)).ok();
         })?;
 
-        Ok(receive.recv()?)
+        Ok(receive.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn request_block(&self, hash: &BlockHash) -> Result<(), handle::Error> {
@@ -554,7 +554,7 @@ impl<W: Waker> handle::Handle for Handle<W> {
         let (transmit, receive) = chan::bounded(1);
         self.command(Command::RequestFilters(range, transmit))?;
 
-        receive.recv()?.map_err(handle::Error::GetFilters)
+        receive.recv_timeout(time::Duration::from_secs(4))?.map_err(handle::Error::GetFilters)
     }
 
     fn blocks(&self) -> chan::Receiver<(Block, Height)> {
@@ -581,7 +581,7 @@ impl<W: Waker> handle::Handle for Handle<W> {
         let (transmit, receive) = chan::bounded(1);
         self.command(Command::Broadcast(msg, predicate, transmit))?;
 
-        Ok(receive.recv()?)
+        Ok(receive.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn connect(&self, addr: net::SocketAddr) -> Result<Link, handle::Error> {
@@ -630,7 +630,7 @@ impl<W: Waker> handle::Handle for Handle<W> {
         let (transmit, receive) = chan::bounded::<Result<ImportResult, tree::Error>>(1);
         self.command(Command::ImportHeaders(headers, transmit))?;
 
-        Ok(receive.recv()?)
+        Ok(receive.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn import_addresses(&self, addrs: Vec<Address>) -> Result<(), handle::Error> {
@@ -646,13 +646,13 @@ impl<W: Waker> handle::Handle for Handle<W> {
         let (transmit, receive) = chan::bounded(1);
         self.command(Command::SubmitTransaction(tx, transmit))?;
 
-        receive.recv()?.map_err(handle::Error::Command)
+        receive.recv_timeout(time::Duration::from_secs(4))?.map_err(handle::Error::Command)
     }
 
     fn get_submitted_transaction(&self, txid: &Txid) -> Result<Option<Transaction>, handle::Error> {
         let (transmit, receive) = chan::bounded::<Option<Transaction>>(1);
         self.command(Command::GetSubmittedTransaction(txid.to_owned(), transmit))?;
-        Ok(receive.recv()?)
+        Ok(receive.recv_timeout(time::Duration::from_secs(4))?)
     }
 
     fn wait<F, T>(&self, f: F) -> Result<T, handle::Error>

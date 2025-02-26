@@ -653,7 +653,7 @@ impl<T: BlockTree, F: Filters, P: peer::Store, C: AdjustedClock<PeerId>> StateMa
 
     /// Process a user command.
     pub fn command(&mut self, cmd: Command) {
-        debug!(target: "p2p", "Received command: {:?}", cmd);
+        debug!(target: "nakamoto_command", "Received command: {:?}", cmd);
 
         match cmd {
             Command::QueryTree(query) => {
